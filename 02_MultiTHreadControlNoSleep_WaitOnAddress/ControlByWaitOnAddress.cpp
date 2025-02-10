@@ -9,21 +9,21 @@
 #include <conio.h>
 
 #define TIMEOUT_INSERT 1000
-#define TIMEOUT_DELETE 500
+#define TIMEOUT_DELETE 400
 #define TIMEOUT_PRINT 1000
 
 std::list<int> g_List;
 bool g_Shutdown = false;
 
-HANDLE g_ShutdownEvent;
-HANDLE g_SaveEvent;
+//HANDLE g_ShutdownEvent;
+//HANDLE g_SaveEvent;
 
 SRWLOCK g_ListLock;
 
-//const int g_PrintWaitObject = 0;
-//const int g_WorkWaitObject = 0;
-//const int g_DeleteWaitObject = 0;
-//const int g_SaveWaitObject = 0;
+const int g_PrintWaitObject = 0;
+const int g_WorkWaitObject = 0;
+const int g_DeleteWaitObject = 0;
+const int g_SaveWaitObject = 0;
 
 unsigned int WINAPI PrintProc(void* arg);
 unsigned int WINAPI WorkerProc(void* arg);
@@ -37,19 +37,19 @@ int wmain(void)
 {
 	InitializeSRWLock(&g_ListLock);
 
-	g_ShutdownEvent = CreateEvent(NULL, true, false, NULL);
-	if (g_ShutdownEvent == NULL)
-	{
-		wprintf(L"# ShutDown Event Object is NULL");
-		return 0;
-	}
+	//g_ShutdownEvent = CreateEvent(NULL, true, false, NULL);
+	//if (g_ShutdownEvent == NULL)
+	//{
+	//	wprintf(L"# ShutDown Event Object is NULL");
+	//	return 0;
+	//}
 
-	g_SaveEvent = CreateEvent(NULL, false, false, NULL);
-	if (g_SaveEvent == NULL)
-	{
-		wprintf(L"# Save Event Object is NULL");
-		return 0;
-	}
+	//g_SaveEvent = CreateEvent(NULL, false, false, NULL);
+	//if (g_SaveEvent == NULL)
+	//{
+	//	wprintf(L"# Save Event Object is NULL");
+	//	return 0;
+	//}
 
 	HANDLE threadArr[6];
 	threadArr[0] = (HANDLE)_beginthreadex(nullptr, 0, PrintProc, nullptr, 0, nullptr);
@@ -67,29 +67,29 @@ int wmain(void)
 
 			if (ch == 27) // esc
 			{
-				//g_Shutdown = true;
-				SetEvent(g_ShutdownEvent);
+				g_Shutdown = true;
+				//SetEvent(g_ShutdownEvent);
 				break;
 			}
 
 			if (ch == 'S' || ch == 's')
 			{
-				//WakeByAddressSingle((void*)&g_SaveWaitObject;
-				SetEvent(g_SaveEvent);
+				WakeByAddressSingle((void*)&g_SaveWaitObject);
+				//SetEvent(g_SaveEvent);
 			}
 		}
 	}
 
 	WaitForMultipleObjects(6, threadArr, true, INFINITE);
-	CloseHandle(g_ShutdownEvent);
-	CloseHandle(g_SaveEvent);
+	//CloseHandle(g_ShutdownEvent);
+	//CloseHandle(g_SaveEvent);
 
 	wprintf(L"# All Threads were Terminated\n");
 	wprintf(L"Insert Count 1 : %u\n\
 Insert Count 2 : %u\n\
 Insert Count 3 : %u\n\
 Delete Count : %u\n"
-, g_CountInsert[0], g_CountInsert[1], g_CountInsert[2], g_CountDelete);
+		, g_CountInsert[0], g_CountInsert[1], g_CountInsert[2], g_CountDelete);
 
 	return 0;
 }
@@ -98,16 +98,16 @@ unsigned int WINAPI PrintProc(void* arg)
 {
 	std::list<int> copiedList;
 
-	while (true /*!g_Shutdown*/)
+	while (!g_Shutdown)
 	{
-		//WaitOnAddress((void*)&g_PrintWaitObject, (void*)&g_PrintWaitObject, sizeof(g_PrintWaitObject), TIMEOUT_PRINT);
-		
-		DWORD waitResult = WaitForSingleObject(g_ShutdownEvent, TIMEOUT_PRINT);
+		WaitOnAddress((void*)&g_PrintWaitObject, (void*)&g_PrintWaitObject, sizeof(g_PrintWaitObject), TIMEOUT_PRINT);
 
-		if (waitResult != WAIT_TIMEOUT) // or, waitResult == WAIT_OBJECT_0
-		{
-			break;
-		}
+		//DWORD waitResult = WaitForSingleObject(g_ShutdownEvent, TIMEOUT_PRINT);
+
+		//if (waitResult != WAIT_TIMEOUT) // or, waitResult == WAIT_OBJECT_0
+		//{
+		//	break;
+		//}
 
 		AcquireSRWLockShared(&g_ListLock);
 		copiedList = g_List;
@@ -151,16 +151,16 @@ unsigned int WINAPI WorkerProc(void* arg)
 		index = 2;
 	}
 
-	while (true /*!g_Shutdown*/)
+	while (!g_Shutdown)
 	{
-		//WaitOnAddress((void*)&g_WorkWaitObject, (void*)&g_WorkWaitObject, sizeof(g_WorkWaitObject), TIMEOUT_INSERT);
-		
-		DWORD waitResult = WaitForSingleObject(g_ShutdownEvent, TIMEOUT_INSERT);
+		WaitOnAddress((void*)&g_WorkWaitObject, (void*)&g_WorkWaitObject, sizeof(g_WorkWaitObject), TIMEOUT_INSERT);
 
-		if (waitResult != WAIT_TIMEOUT)
-		{
-			break;
-		}
+		//DWORD waitResult = WaitForSingleObject(g_ShutdownEvent, TIMEOUT_INSERT);
+
+		//if (waitResult != WAIT_TIMEOUT)
+		//{
+		//	break;
+		//}
 
 		//int randNum = rand() % 100;
 		int num = base * (i + 1);
@@ -179,16 +179,16 @@ unsigned int WINAPI WorkerProc(void* arg)
 
 unsigned int WINAPI DeleteProc(void* arg)
 {
-	while (true /*!g_Shutdown*/)
+	while (!g_Shutdown)
 	{
-		//WaitOnAddress((void*)&g_DeleteWaitObject, (void*)&g_DeleteWaitObject, sizeof(g_DeleteWaitObject), TIMEOUT_DELETE);
-		
-		DWORD waitResult = WaitForSingleObject(g_ShutdownEvent, TIMEOUT_DELETE);
-		
-		if (waitResult != WAIT_TIMEOUT)
-		{
-			break;
-		}
+		WaitOnAddress((void*)&g_DeleteWaitObject, (void*)&g_DeleteWaitObject, sizeof(g_DeleteWaitObject), TIMEOUT_DELETE);
+
+		//DWORD waitResult = WaitForSingleObject(g_ShutdownEvent, TIMEOUT_DELETE);
+
+		//if (waitResult != WAIT_TIMEOUT)
+		//{
+		//	break;
+		//}
 
 		AcquireSRWLockExclusive(&g_ListLock);
 		if (!g_List.empty())
@@ -207,18 +207,18 @@ unsigned int WINAPI SaveProc(void* arg)
 {
 	std::list<int> copiedList;
 
-	const HANDLE events[2] = { g_ShutdownEvent, g_SaveEvent };
+	//const HANDLE events[2] = { g_ShutdownEvent, g_SaveEvent };
 
-	while (true /*!g_Shutdown*/)
+	while (!g_Shutdown)
 	{
-		//WaitOnAddress((void*)&g_SaveWaitObject, (void*)&g_SaveWaitObject, sizeof(g_SaveWaitObject), INFINITE);
-		
-		DWORD waitResult = WaitForMultipleObjects(2, events, false, INFINITE);
+		WaitOnAddress((void*)&g_SaveWaitObject, (void*)&g_SaveWaitObject, sizeof(g_SaveWaitObject), INFINITE);
 
-		if (waitResult == WAIT_OBJECT_0)
-		{
-			break;
-		}
+		//DWORD waitResult = WaitForMultipleObjects(2, events, false, INFINITE);
+
+		//if (waitResult == WAIT_OBJECT_0)
+		//{
+		//	break;
+		//}
 
 		AcquireSRWLockShared(&g_ListLock);
 		copiedList = g_List;
