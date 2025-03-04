@@ -13,7 +13,7 @@
 #include "Protocol.h"
 #include "RingBuffer.h"
 
-#define TIMEOUT_PROVIDER 50
+#define TIMEOUT_PROVIDER 1
 #define TIMEOUT_MONITOR 1000
 
 static MyDataStructure::RingBuffer g_MessageQueue;

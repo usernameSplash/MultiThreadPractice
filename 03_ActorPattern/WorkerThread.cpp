@@ -63,7 +63,7 @@ unsigned int WINAPI WorkerThread(void* arg)
 		case eMSG_TYPE::DEL:
 			{
 				AcquireSRWLockExclusive(&g_ListLock);
-				if (g_List.empty())
+				if (!g_List.empty())
 				{
 					g_List.pop_front();
 				}
@@ -136,6 +136,8 @@ unsigned int WINAPI WorkerThread(void* arg)
 		InterlockedIncrement(&g_TPSEachThread[threadIndex]);
 		InterlockedIncrement(&g_TPSAll);
 	}
+	
+	wprintf(L"# Worker Thread Return, ID : %d\n", threadID);
 
 	return 0;
 }
@@ -176,7 +178,7 @@ unsigned int WINAPI ProviderThread(void* arg)
 			}
 		}
 
-		typeNum = rand() % MSG_TYPE_NUM - 1; // exclude QUIT
+		typeNum = rand() % (MSG_TYPE_NUM - 1); // exclude QUIT
 		head._type = (eMSG_TYPE)typeNum;;
 		
 		switch (head._type)
@@ -184,7 +186,7 @@ unsigned int WINAPI ProviderThread(void* arg)
 		case ADD:
 			{
 				int payloadStrLen = rand() % 27;
-				head._payloadLen = payloadStrLen;
+				head._payloadLen = sizeof(const wchar_t) * payloadStrLen;
 
 				AcquireSRWLockExclusive(&g_MessageQueueLock);
 				g_MessageQueue.Enqueue((char*)&head, sizeof(MSG_HEAD));
@@ -222,7 +224,7 @@ unsigned int WINAPI ProviderThread(void* arg)
 		case FIND:
 			{
 				int payloadStrLen = rand() % 27;
-				head._payloadLen = payloadStrLen;
+				head._payloadLen = sizeof(const wchar_t) * payloadStrLen;
 
 				AcquireSRWLockExclusive(&g_MessageQueueLock);
 				g_MessageQueue.Enqueue((char*)&head, sizeof(MSG_HEAD));
@@ -254,6 +256,8 @@ unsigned int WINAPI ProviderThread(void* arg)
 		Sleep(TIMEOUT_PROVIDER);
 	}
 
+	wprintf(L"# Provider Thread Return, ID : %d\n", threadID);
+
 	return 0;
 }
 
@@ -273,6 +277,7 @@ unsigned int WINAPI MonitorThread(void* arg)
 		long tpsThread2 = g_TPSEachThread[1];
 		long tpsThread3 = g_TPSEachThread[2];
 		long tpsAll = g_TPSAll;
+		size_t jobQueueSize = g_MessageQueue.Size();
 
 		g_TPSAdd = 0;
 		g_TPSDel = 0;
@@ -293,11 +298,14 @@ unsigned int WINAPI MonitorThread(void* arg)
  Thread 1 : %d\n\
  Thread 2 : %d\n\
  Thread 3 : %d\n\
- All : %d\n\n",
-			tpsAdd, tpsDel, tpsSort, tpsFind, tpsPrint, tpsThread1, tpsThread2, tpsThread3, tpsAll);
+ All : %d\n\n\
+JobQueue Size : %zu\n\n",
+			tpsAdd, tpsDel, tpsSort, tpsFind, tpsPrint, tpsThread1, tpsThread2, tpsThread3, tpsAll, jobQueueSize);
 
 		Sleep(TIMEOUT_MONITOR);
 	}
+
+	wprintf(L"# Monitor Thread Return, ID : %d\n", threadID);
 
 	return 0;
 }

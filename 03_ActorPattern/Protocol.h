@@ -3,7 +3,7 @@
 #include <Windows.h>
 
 #define WORKER_THREAD_NUM 3
-#define MSG_TYPE_NUM 6;
+#define MSG_TYPE_NUM 6
 
 typedef enum eMSG_TYPE
 {
