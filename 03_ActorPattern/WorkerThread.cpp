@@ -104,7 +104,7 @@ unsigned int WINAPI WorkerThread(void* arg)
 				ReleaseSRWLockShared(&g_ListLock);
 
 				FILE* file;
-				file = _wfopen(L"WorkerThreadPrintResult", L"w");
+				file = _wfopen(L"WorkerThreadPrintResult.txt", L"w");
 
 				if (file == NULL)
 				{
